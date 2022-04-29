@@ -19,7 +19,38 @@ bool is_match_ignore_case(const char *a, const char *b, size_t max_len) {
   return true;
 }
 
+// NOTE: to_integral fns doesn't care about overflows
+
+int to_integral(f32 &val, const char *str) {
+  char *endptr;
+  
+  val = strtof(str, &endptr);
+
+  if (*endptr == 0 || isspace(*endptr))
+    return 0;
+
+  return -1;
+}
+
+/// base == 0 is for decimals or [2, 36] see strtol
+int to_integral(u32 &val, const char *str, int base) {
+  char *endptr;
+  i32 parsed = strtol(str, &endptr, base);
+
+  if (*endptr != 0 && !isspace(*endptr))
+    return -1;
+
+  if (parsed < 0)
+    return -2;
+
+  val = parsed;
+
+  return 0;
+}
+
 int to_integral(f32 &val, const char *str, char **endptr) {
+  assert(endptr != nullptr);
+  
   val = strtof(str, endptr);
 
   if (**endptr == 0 || isspace(**endptr))
@@ -29,13 +60,20 @@ int to_integral(f32 &val, const char *str, char **endptr) {
 }
 
 /// base == 0 is for decimals or [2, 36] see strtol
-int to_integral(u32 &val, const char *str, char **endptr, int base = 0) {
-  val = strtol(str, endptr, base);
+int to_integral(u32 &val, const char *str, char **endptr, int base) {
+  assert(endptr != nullptr);
+  
+  i32 parsed = strtol(str, endptr, base);
 
-  if (**endptr == 0 || isspace(**endptr))
-    return 0;
+  if (**endptr != 0 && !isspace(**endptr))
+    return -1;
 
-  return -1;
+  if(parsed < 0)
+    return -2;
+
+  val = parsed;
+  
+  return 0;
 }
 
 template <class T> int to_array(T *arr, const char *str, u32 count) {

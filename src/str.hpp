@@ -10,8 +10,17 @@ namespace str {
   template<class T> int to_array(T *arr, const char *str, u32 count);
   // NOTE: only valid type that can use base conversion
   int to_array(u32 *arr, const char *str, u32 count, int base);
+
+  // REVIEW: should endptr versions stay?
+
+  // NOTE: in endptr versions, endptr can't be nullptr (asserted)
   
-  int to_integral(float &val, const char *str, char **endptr);
+  int to_integral(f32 &val, const char *str);
+  int to_integral(f32 &val, const char *str, char **endptr);
+  
+  int to_integral(u32 &val, const char *str, int base = 0);
+  int to_integral(u32 &val, const char *str, char **endptr, int base = 0);
+  
   int to_vector(V2 &v2, const char *str);
   int to_vector(V3 &v3, const char *str);
   int to_vector(V4 &v4, const char *str);
