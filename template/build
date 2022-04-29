@@ -89,6 +89,9 @@ LIB_$(1)$(2) := $$(OBJ_DIR_$(1)$(2))/lib$(1).so
 
 OBJS_$(1)$(2) := $$(SRCS_$(1):$$(SRC_DIR_$(1))/%.$(12)=$$(OBJ_DIR_$(1)$(2))/%.o)
 
+# TODO: should point to ASM_DIR not OBJ_DIR
+ASMS_$(1)$(2) := $$(SRCS_$(1):$$(SRC_DIR_$(1))/%.$(12)=$$(OBJ_DIR_$(1)$(2))/%.s)
+
 ALL_OBJS_DIRS_$(1)$(2) := $$(OBJ_DIR_$(1)$(2)) $$(patsubst $(4)/%,$$(OBJ_DIR_$(1)$(2))/%,$$(SRC_SUB_DIRS_$(1)))
 ALL_DEPS_DIRS_$(1)$(2) := $$(DEP_DIR_$(1)$(2)) $$(patsubst $(4)/%,$$(DEP_DIR_$(1)$(2))/%,$$(SRC_SUB_DIRS_$(1)))
 
@@ -99,6 +102,8 @@ $(1)$(2): $$(OBJS_$(1)$(2))
 lib$(1)$(2): $$(LIB_$(1)$(2))
 .PHONY: lib$(1)$(2)
 
+asm_$(1)$(2): $$(ASMS_$(1)$(2))
+
 $$(LIB_$(1)$(2)): $$(OBJS_$(1)$(2)) | $$(OBJ_DIR_$(1)$(2))
 	@$$(PRINTF) "LNK\t$(11)$$(notdir $$@)\n"
 	@$$(CC) -shared -o $$@ $$^
@@ -106,6 +111,10 @@ $$(LIB_$(1)$(2)): $$(OBJS_$(1)$(2)) | $$(OBJ_DIR_$(1)$(2))
 $$(OBJ_DIR_$(1)$(2))/%.o: $$(SRC_DIR_$(1))/%.$(12) | $$(OBJ_DIR_$(1)$(2)) $$(DEP_DIR_$(1)$(2))
 	@$$(PRINTF) "CC\t$(11)$$(notdir $$@)\n"
 	@$$(CC) -o $$@ -c $$< $$(INCLUDES_$(1)) $(9) $$(DEPFLAGS_$(1)$(2))
+
+$$(OBJ_DIR_$(1)$(2))/%.s: $$(SRC_DIR_$(1))/%.$(12) | $$(OBJ_DIR_$(1)$(2)) $$(DEP_DIR_$(1)$(2))
+	@$$(PRINTF) "CC -S \t$(11)$$(notdir $$@)\n"
+	@$$(CC) -o $$@ -S $$< $$(INCLUDES_$(1)) $(9) $$(DEPFLAGS_$(1)$(2))
 
 $$(OBJ_DIR_$(1)$(2)):
 	@$$(MKDIR-P) $$(ALL_OBJS_DIRS_$(1)$(2))
