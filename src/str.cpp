@@ -1,10 +1,11 @@
 #include "str.hpp"
+#include "scene.hpp"
 #include "vector.hpp"
 
+#include <assert.h>
 #include <ctype.h>
 #include <math.h>
 #include <stdlib.h>
-#include <assert.h>
 
 namespace str {
 
@@ -19,17 +20,40 @@ bool is_match_ignore_case(const char *a, const char *b, size_t max_len) {
   return true;
 }
 
+int find_right_whitespace_end(const char *str, u32 length) {
+  for (; length > 0 && isspace(str[length - 1]); --length)
+    ;
+
+  return length;
+}
+
 // NOTE: to_integral fns doesn't care about overflows
 
 int to_integral(f32 &val, const char *str) {
   char *endptr;
-  
-  val = strtof(str, &endptr);
 
-  if (*endptr == 0 || isspace(*endptr))
-    return 0;
+  f32 parsed = strtof(str, &endptr);
 
-  return -1;
+  if (*endptr != 0 && !isspace(*endptr))
+    return -1;
+
+  val = parsed;
+
+  return 0;
+}
+
+/// base == 0 is for decimals or [2, 36] see strtol
+int to_integral(i32 &val, const char *str, int base) {
+  char *endptr;
+
+  i32 parsed = strtol(str, &endptr, base);
+
+  if (*endptr != 0 && !isspace(*endptr))
+    return -1;
+
+  val = parsed;
+
+  return 0;
 }
 
 /// base == 0 is for decimals or [2, 36] see strtol
@@ -50,29 +74,45 @@ int to_integral(u32 &val, const char *str, int base) {
 
 int to_integral(f32 &val, const char *str, char **endptr) {
   assert(endptr != nullptr);
-  
-  val = strtof(str, endptr);
 
-  if (**endptr == 0 || isspace(**endptr))
-    return 0;
+  f32 parsed = strtof(str, endptr);
 
-  return -1;
+  if (**endptr != 0 && !isspace(**endptr))
+    return -1;
+
+  val = parsed;
+
+  return 0;
 }
 
 /// base == 0 is for decimals or [2, 36] see strtol
-int to_integral(u32 &val, const char *str, char **endptr, int base) {
+int to_integral(i32 &val, const char *str, char **endptr, int base) {
   assert(endptr != nullptr);
-  
+
   i32 parsed = strtol(str, endptr, base);
 
   if (**endptr != 0 && !isspace(**endptr))
     return -1;
 
-  if(parsed < 0)
+  val = parsed;
+
+  return 0;
+}
+
+/// base == 0 is for decimals or [2, 36] see strtol
+int to_integral(u32 &val, const char *str, char **endptr, int base) {
+  assert(endptr != nullptr);
+
+  i32 parsed = strtol(str, endptr, base);
+
+  if (**endptr != 0 && !isspace(**endptr))
+    return -1;
+
+  if (parsed < 0)
     return -2;
 
   val = parsed;
-  
+
   return 0;
 }
 
@@ -107,6 +147,56 @@ template <class T> int to_array(T *arr, const char *str, u32 count, int base) {
       return status;
     arr[i] = val;
     str = endptr;
+  }
+
+  return 0;
+}
+
+template <class T>
+int to_array(T *arr, u32 &count, const char *str, u32 str_length,
+             u32 max_count) {
+  assert(arr != nullptr);
+
+  char *endptr = nullptr;
+  const char *str_end = str + find_right_whitespace_end(str, str_length);
+  T val = 0;
+
+  count = 0;
+
+  // REVIEW: should I decompose this for loop?
+  for (u32 i = 0; i < max_count && str < str_end; ++i) {
+    int status = to_integral(val, str, &endptr);
+    if (status < 0)
+      return status;
+    arr[i] = val;
+    str = endptr;
+    ++count;
+  }
+
+  return 0;
+}
+template int to_array<f32>(f32 *, u32 &, const char *, u32, u32);
+template int to_array<u32>(u32 *, u32 &, const char *, u32, u32);
+
+template <class T>
+int to_array(T *arr, u32 &count, const char *str, u32 str_length, u32 max_count,
+             int base) {
+  assert(arr != nullptr);
+
+  char *endptr = nullptr;
+  const char *str_end = str + find_right_whitespace_end(str, str_length);
+  T val = 0;
+
+  count = 0;
+
+  // REVIEW: should I decompose this for loop?
+  for (u32 i = 0; i < max_count && str < str_end; ++i) {
+    int status = to_integral(val, str, &endptr, base);
+    if (status < 0)
+      return status;
+    arr[i] = val;
+    str = endptr;
+    ++count;
   }
 
   return 0;
