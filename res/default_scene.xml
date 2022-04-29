@@ -13,17 +13,17 @@
     <ambientlight>25 25 25</ambientlight>
     <pointlight id="1">
       <position> 0 0 0 </position>
-      <intesity> 1000 1000 1000 </intensity>
+      <intensity> 1000 1000 1000 </intensity>
     </pointlight>
     <!-- ... -->
   </lights>
   <materials>
     <material id="1">
-      <ambient>1 1 1</ambinet>
+      <ambient>1 1 1</ambient>
       <diffuse>1 1 1</diffuse>
       <specular>1 1 1</specular>
       <phongexponent>1</phongexponent>
-      <mirrorreflactance>0 0 0</mirrorreflanctance>
+      <mirrorreflactance>0 0 0</mirrorreflactance>
     </material>
     <!-- ... -->
   </materials>
