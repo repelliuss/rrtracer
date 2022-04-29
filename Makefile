@@ -11,5 +11,5 @@ NAME := $(PROJECT)
 SRC_DIR := src
 SRC_EXT := cpp
 INCLUDE_DIR := lib
-CFLAGS := -O2 -g -DDEBUG -Wall -Wextra
+CFLAGS := -O2 -g -DDEBUG -Wall -Wextra -std=c++17
 $(eval $(make_build))
