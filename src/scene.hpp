@@ -7,13 +7,18 @@
 
 // TODO: can we make arrays to its their own struct with counts?
 
+struct Orientation {
+  V3 u, v, w;
+};
+
 struct Camera {
   V3 pos;
   V3 gaze;
   V3 up;
   V4 near_plane;
   f32 near_dist;
-  V2 resolution;
+  V2u resolution;
+  Orientation orientation;
 };
 
 struct AmbientLight {
