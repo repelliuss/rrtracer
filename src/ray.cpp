@@ -143,55 +143,47 @@ struct HitData {
   const V3 wo;
 };
 
-constexpr Color hit_color(const std::vector<HitData> &hits, const Scene &scene) {
+inline Color hit_color(std::vector<HitData> &hits, const Scene &scene) {
   Color c = v3(0, 0, 0);
+  Color next_color = v3(0, 0, 0);
 
-  for (u32 i = 0; i < scene.point_light_count; ++i) {
-    const PointLight &light = scene.point_lights[i];
-    const HitData &first_hit = hits.front();
-    const V3 wi = light.pos - first_hit.pos;
-    const f32 light_dist = length(wi);
-    
-    V3 norm_wi = norm(wi);
-    LightHitSpec spec = {
-        .mat = first_hit.material,
-        .normal = &first_hit.normal,
-        .wo = &first_hit.wo,
-        .wi = &norm_wi,
-    };
+  for(i32 hi = hits.size() - 1; hi >= 0; --hi) {
+    Color cur_color = v3(0, 0, 0);
+    const HitData &hit = hits[hi];
 
-    const Ray shadow_ray = {
-        .origin = first_hit.pos + norm_wi * shadow_epsilon,
-        .direction = norm_wi,
-    };
+    for (u32 i = 0; i < scene.ambient_light_count; ++i) {
+      cur_color += ambient(scene.ambient_lights[i], hit.material);
+    }
 
-    if (in_shadow(shadow_ray, light_dist, scene))
-      continue;
+    for (u32 i = 0; i < scene.point_light_count; ++i) {
+      const PointLight &light = scene.point_lights[i];
+      const V3 wi = light.pos - hit.pos;
+      const f32 light_dist = length(wi);
+      const V3 norm_wi = norm(wi);
+      const LightHitSpec spec = {
+          .mat = hit.material,
+          .normal = &hit.normal,
+          .wo = &hit.wo,
+          .wi = &norm_wi,
+      };
 
-    const V3 irradiance =
-        safe_div_or_0(light.intensity, light_dist * light_dist);
+      const Ray shadow_ray = {
+          .origin = hit.pos + norm_wi * shadow_epsilon,
+          .direction = norm_wi,
+      };
 
-    c += (diffuse(spec) + specular(spec)) * irradiance;
-
-    for(u32 i = 1; i < hits.size(); ++i) {
-      norm_wi = norm(light.pos - hits[i].pos);
-      spec.mat = hits[i].material;
-      spec.normal = &hits[i].normal;
-      spec.wo = &hits[i].wo;
-      spec.wi = &norm_wi;
-
-      Ray shadow_ray = {.origin = hits[i].pos + *spec.wi * shadow_epsilon,
-                        .direction = *spec.wi};
-      
-      c += ambient(scene.ambient_lights[0], spec.mat) *
-           hits[i - 1].material->reflactance;
-
-      if (in_shadow(shadow_ray, length(*spec.wi), scene))
+      if (in_shadow(shadow_ray, light_dist, scene))
         continue;
 
-      c += (diffuse(spec) + specular(spec)) * irradiance *
-           hits[i - 1].material->reflactance;
+      const V3 irradiance =
+          safe_div_or_0(light.intensity, light_dist * light_dist);
+
+      cur_color += (diffuse(spec) + specular(spec)) * irradiance;
     }
+
+    V3 tmp = cur_color + next_color * hit.material->reflactance;
+    next_color = c + tmp;
+    c += tmp;
   }
 
   return c;
@@ -255,17 +247,12 @@ int trace(std::vector<Color> *colors, Input *in) {
         ray.direction =
             2 * dot(hit_data.wo, hit_data.normal) * hit_data.normal -
             hit_data.wo;
-        ray.origin = hit_data.pos + ray.direction * shadow_epsilon;
+        ray.origin = hit_data.pos + ray.direction * intersect_epsilon;
       }
 
       if (!hits.empty()) {
         // light calculations
-        const HitData &initial_hit = hits.front();
         Color color = v3(0, 0, 0);
-
-        for (u32 i = 0; i < scene.ambient_light_count; ++i) {
-          color += ambient(scene.ambient_lights[i], initial_hit.material);
-        }
 
         color += hit_color(hits, scene);
 
