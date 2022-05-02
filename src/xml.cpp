@@ -169,14 +169,10 @@ int node_to_materials(std::vector<Material> &materials,
     
     const xml_attribute<> *attr = material_node->first_attribute("id");
     const char *id = attr->value();
-    const u32 id_size = attr->value_size();
 
-    // TODO: remove 255
-    if(id == nullptr || id_size > 254) goto on_err;
+    if(id == nullptr) goto on_err;
 
-    strncpy(material.id, id, id_size);
-    material.id[255] = 0;
-
+    material.id = id;
     
     status |= node_to_vector(material.ambient, material_node, "ambient");
     status |= node_to_vector(material.diffuse, material_node, "diffuse");

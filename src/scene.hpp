@@ -3,6 +3,7 @@
 #include "vector.hpp"
 
 #include <vector>
+#include <string>
 
 struct Orientation {
   V3 u, v, w;
@@ -29,7 +30,7 @@ struct PointLight {
 };
 
 struct Material {
-  char id[256];
+  std::string id;
   V3 ambient;
   V3 diffuse;
   V3 specular;

@@ -11,7 +11,7 @@ int material_by_id(Material *&material, std::vector<Material> &materials,
   }
 
   for(Material &mat : materials) {
-    if (strcmp(mat.id, name) == 0) {
+    if (strcmp(mat.id.c_str(), name) == 0) {
       material = &mat;
       return 0;
     }
