@@ -144,7 +144,6 @@ struct HitData {
 };
 
 inline Color hit_color(std::vector<HitData> &hits, const Scene &scene) {
-  Color c = v3(0, 0, 0);
   Color next_color = v3(0, 0, 0);
 
   for(i32 hi = hits.size() - 1; hi >= 0; --hi) {
@@ -181,12 +180,10 @@ inline Color hit_color(std::vector<HitData> &hits, const Scene &scene) {
       cur_color += (diffuse(spec) + specular(spec)) * irradiance;
     }
 
-    V3 tmp = cur_color + next_color * hit.material->reflactance;
-    next_color = c + tmp;
-    c += tmp;
+    next_color = cur_color + next_color * hit.material->reflactance;
   }
 
-  return c;
+  return next_color;
 }
 
 void *threaded_trace(void *arg) {
