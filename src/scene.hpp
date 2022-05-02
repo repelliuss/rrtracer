@@ -43,15 +43,36 @@ struct Material {
 int material_by_id(Material *&material, Material *materials, u32 material_count,
                    i32 id);
 
+struct TriangleFace {
+  union {
+    V3 vertices[3];
+    struct {
+      V3 a;
+      V3 b;
+      V3 c;
+    };
+  };
+  Color color;
+  // REVIEW: can return -0 value on axis
+  constexpr V3 normal() const {
+    V3 ba = b - a;
+    V3 ca = c - a;
+    return cross(ba, ca);
+  }
+};
+
 // REVIEW: mesh id is not needed in xml
 struct Mesh {
   // REVIEW: may not be needed
   // NOTE: should point to Scene.vertices
   V3 *vertices;
 
-  u32 triangles[128 * 3]; // NOTE: faces field in xml
+  u32 triangles[1024 * 3]; // NOTE: faces field in xml
   u32 triangle_count = 0;
-  
+
+  TriangleFace faces[1024];
+  u32 face_count;
+
   Material *material;
 };
 
@@ -70,10 +91,10 @@ struct Scene {
   u32 material_count = 0;
 
   // TODO: remove this
-  static constexpr u32 vertex_capacity = 128;
+  static constexpr u32 vertex_capacity = 1024;
   static constexpr u32 integral_capacity = 16;
   
-  V3 vertices[128];
+  V3 vertices[vertex_capacity];
   u32 vertex_count = 0;
   
   Mesh meshes[16]; // NOTE: objects field in xml
