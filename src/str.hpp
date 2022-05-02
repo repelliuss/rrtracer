@@ -4,8 +4,11 @@
 
 #include "vector.hpp"
 
+#include <vector>
+
 namespace str {
 bool is_match_ignore_case(const char *a, const char *b, size_t len);
+int find_right_whitespace_end(const char *str, u32 length);
 
 template <class T> int to_array(T *arr, const char *str, u32 count);
 
@@ -16,6 +19,9 @@ int to_array(i32 *arr, const char *str, u32 count, int base);
 template <class T>
 int to_array(T *arr, u32 &count, const char *str, u32 str_length,
              u32 max_count);
+
+template <class T>
+int to_array(std::vector<T> &arr, const char *str, u32 str_length);
 
 // NOTE: only valid types that can use base conversion
 int to_array(u32 *arr, u32 &count, const char *str, u32 str_length,

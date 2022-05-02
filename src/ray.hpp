@@ -1,7 +1,7 @@
 #pragma once
 
-#include "vector.hpp"
 #include "scene.hpp"
+#include "vector.hpp"
 
 #include <vector>
 
@@ -64,6 +64,5 @@ struct ThreadInput {
 
 void *threaded_trace(void *arg);
   
-// TODO: remove vector
 int trace(std::vector<Color> *colors, Input *in);
 } // namespace ray

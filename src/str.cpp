@@ -202,6 +202,24 @@ int to_array(T *arr, u32 &count, const char *str, u32 str_length, u32 max_count,
   return 0;
 }
 
+template <class T>
+int to_array(std::vector<T> &arr, const char *str, u32 str_length) {
+  char *endptr = nullptr;
+  const char *str_end = str + find_right_whitespace_end(str, str_length);
+
+  // REVIEW: should I decompose this for loop?
+  for (u32 i = 0; str < str_end; ++i) {
+    arr.emplace_back();
+    int status = to_integral(arr.back(), str, &endptr);
+    if (status < 0)
+      return status;
+    str = endptr;
+  }
+
+  return 0;
+}
+template int to_array(std::vector<u32> &arr, const char *str, u32 str_length);
+
 int to_vector(V2 &v2, const char *str) { return to_array(v2.e, str, 2); }
 int to_vector(V2u &v2, const char *str) { return to_array(v2.e, str, 2); }
   

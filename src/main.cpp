@@ -17,12 +17,12 @@ int main(int argc, char *argv[]) {
   char *scene_description;
   umax size_scene_description;
 
-  if(argc < 2) {
-    fprintf(stderr, "no scene path\n");
-    return -1;
-  }
+  // if(argc < 2) {
+  //   fprintf(stderr, "no scene path\n");
+  //   return -1;
+  // }
 
-  status = file::size(size_scene_description, argv[1]);
+  status = file::size(size_scene_description, "res/monkey_wallf.xml");
   if (status < 0)
     return status;
 
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
   scene_description = static_cast<char *>(malloc(size_scene_description + 1));
   scene_description[size_scene_description] = 0;
 
-  status = file::read(scene_description, argv[1],
+  status = file::read(scene_description, "res/monkey_wallf.xml",
                       size_scene_description);
   if (status < 0)
     goto on_err;
@@ -41,8 +41,6 @@ int main(int argc, char *argv[]) {
 
     int thread_count = 16;
 
-    // TODO: remove ugly vectors
-    
     pthread_t pids[thread_count];
     int y_step = scene.cam.resolution.y / thread_count;
     std::vector<Color> colors[thread_count];
@@ -70,6 +68,8 @@ int main(int argc, char *argv[]) {
       pthread_join(pids[i], NULL);
       all_colors.insert(all_colors.end(), colors[i].begin(), colors[i].end());
     }
+
+    printf("done!\n");
     
     size_t count = all_colors.size();
 

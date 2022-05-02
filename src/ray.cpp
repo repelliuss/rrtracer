@@ -33,7 +33,6 @@ constexpr f32 intersects_at(const Ray &ray, const TriangleFace &tri) {
   V3 ba = tri.a - tri.b;
   V3 ca = tri.a - tri.c;
 
-  // TODO: maybe check if parallel to plane?
 
   f32 A = determinant(ba, ca, ray.direction);
   if (A == 0.0f)
@@ -73,15 +72,12 @@ constexpr Color specular(const HitData &hit, const V3 &wi) {
          pow(max(0, dot(hit.normal, h)), hit.material->phong);
 }
 
-constexpr int in_shadow(const Ray &shadow_ray, f32 light_dist,
-                        const Scene &scene) {
+inline int in_shadow(const Ray &shadow_ray, f32 light_dist,
+                     const Scene &scene) {
   f32 t_max = constant::max_float;
 
-  for (u32 i = 0; i < scene.mesh_count; ++i) {
-    const Mesh *cur_mesh = &scene.meshes[i];
-
-    for (u32 j = 0; j < cur_mesh->face_count; ++j) {
-      const TriangleFace &cur_face = cur_mesh->faces[j];
+  for (const Mesh &cur_mesh : scene.meshes) {
+    for (const TriangleFace &cur_face : cur_mesh.faces) {
       f32 t_intersect = intersects_at(shadow_ray, cur_face);
 
       if (t_intersect < t_max) {
@@ -104,12 +100,11 @@ constexpr Color hit_color(const HitData *hits, u32 hits_size,
     Color cur_color = v3(0, 0, 0);
     const HitData &hit = hits[hi];
 
-    for (u32 i = 0; i < scene.ambient_light_count; ++i) {
-      cur_color += ambient(scene.ambient_lights[i], hit.material);
+    for(const AmbientLight &light : scene.ambient_lights) {
+      cur_color += ambient(light, hit.material);
     }
 
-    for (u32 i = 0; i < scene.point_light_count; ++i) {
-      const PointLight &light = scene.point_lights[i];
+    for(const PointLight &light : scene.point_lights) {
       const V3 wi = light.pos - hit.pos;
       const f32 light_dist = length(wi);
       const V3 norm_wi = norm(wi);
@@ -162,16 +157,13 @@ int trace(std::vector<Color> *colors, Input *in) {
         const Mesh *hit = nullptr;
         V3 hit_normal;
 
-        for (u32 i = 0; i < scene.mesh_count; ++i) {
-          const Mesh *cur_mesh = &scene.meshes[i];
-
-          for (u32 j = 0; j < cur_mesh->face_count; ++j) {
-            const TriangleFace &cur_face = cur_mesh->faces[j];
+	for(const Mesh &cur_mesh : scene.meshes) {
+	  for(const TriangleFace &cur_face : cur_mesh.faces) {
             f32 t_intersect = intersects_at(ray, cur_face);
 
             if (t_intersect < t_min) {
               t_min = t_intersect;
-              hit = cur_mesh;
+              hit = &cur_mesh;
               hit_normal = cur_face.normal();
             }
           }
