@@ -34,7 +34,7 @@ struct Material {
   V3 diffuse;
   V3 specular;
   f32 phong;
-  V3 reflactance;
+  V3 reflectance;
 };
 
 int material_by_id(Material *&material, std::vector<Material> &materials,

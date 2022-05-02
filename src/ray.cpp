@@ -124,7 +124,7 @@ constexpr Color hit_color(const HitData *hits, u32 hits_size,
           (diffuse(hit, norm_wi) + specular(hit, norm_wi)) * irradiance;
     }
 
-    next_color = cur_color + next_color * hit.material->reflactance;
+    next_color = cur_color + next_color * hit.material->reflectance;
   }
 
   return next_color;
@@ -178,7 +178,7 @@ int trace(std::vector<Color> *colors, Input *in) {
         hits[depth].wo = norm(-ray.direction);
         ++hits_size;
 
-        if (length(hits[depth].material->reflactance) <= constant::shadow_epsilon)
+        if (length(hits[depth].material->reflectance) <= constant::shadow_epsilon)
           break;
 
         ray.direction =

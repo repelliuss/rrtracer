@@ -182,7 +182,7 @@ int node_to_materials(std::vector<Material> &materials,
     status |= node_to_vector(material.diffuse, material_node, "diffuse");
     status |= node_to_vector(material.specular, material_node, "specular");
     status |= node_to_integral(material.phong, material_node, "phongexponent");
-    status |= node_to_vector(material.reflactance, material_node,
+    status |= node_to_vector(material.reflectance, material_node,
                              "mirrorreflectance");
 
     if (status < 0) {
