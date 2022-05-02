@@ -203,6 +203,8 @@ int to_array(T *arr, u32 &count, const char *str, u32 str_length, u32 max_count,
 }
 
 int to_vector(V2 &v2, const char *str) { return to_array(v2.e, str, 2); }
+int to_vector(V2u &v2, const char *str) { return to_array(v2.e, str, 2); }
+  
 int to_vector(V3 &v3, const char *str) { return to_array(v3.e, str, 3); }
 int to_vector(V4 &v4, const char *str) { return to_array(v4.e, str, 4); }
 

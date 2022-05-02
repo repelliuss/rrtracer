@@ -34,7 +34,10 @@ int to_integral(i32 &val, const char *str, char **endptr, int base = 0);
 int to_integral(u32 &val, const char *str, int base = 0);
 int to_integral(u32 &val, const char *str, char **endptr, int base = 0);
 
+  
 int to_vector(V2 &v2, const char *str);
+int to_vector(V2u &v2, const char *str);
+  
 int to_vector(V3 &v3, const char *str);
 int to_vector(V4 &v4, const char *str);
 } // namespace str
