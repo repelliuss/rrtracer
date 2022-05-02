@@ -7,7 +7,7 @@
 
 namespace ray {
 
-constexpr f32 shadow_epsilon = 1e-6;
+constexpr f32 shadow_epsilon = 0.000001;
 constexpr f32 intersect_epsilon = 1e-2;
 
 template <class T> constexpr T safe_div_or_0(T num, f32 denom) {
@@ -58,15 +58,15 @@ constexpr f32 intersects_at(const Ray &ray, const TriangleFace &tri) {
   // TODO: maybe check if parallel to plane?
 
   f32 A = determinant(ba, ca, ray.direction);
-  if(A == 0.0f)
+  if (A == 0.0f)
     return std::numeric_limits<f32>::max();
 
   f32 beta = determinant(oa, ca, ray.direction) / A;
   f32 gamma = determinant(ba, oa, ray.direction) / A;
 
-  if(beta + gamma <= 1 && 0 <= beta && 0 <= gamma) {
+  if (beta + gamma <= 1 && 0 <= beta && 0 <= gamma) {
     f32 t = determinant(ba, ca, oa) / A;
-    if(t > intersect_epsilon)
+    if (t > intersect_epsilon)
       return t;
   }
 
@@ -98,7 +98,7 @@ constexpr Color diffuse(const LightHitSpec &in) {
   const V3 &normal = *in.normal;
   const V3 &wi = *in.wi;
 
-  V3 val = mat->diffuse * max(0, dot(norm(wi), norm(normal)));
+  V3 val = mat->diffuse * max(0, dot(wi, normal));
   return val;
 }
 
@@ -108,10 +108,9 @@ constexpr Color specular(const LightHitSpec &in) {
   const V3 &wo = *in.wo;
   const V3 &wi = *in.wi;
 
-  V3 sum = wo + wi;
-  V3 h = safe_div_or_0(sum, length(sum));
+  V3 h = norm(wo + wi);
 
-  return mat->specular * pow(max(0, dot(norm(normal), h)), mat->phong);
+  return mat->specular * pow(max(0, dot(normal, h)), mat->phong);
 }
 
 constexpr int in_shadow(const Ray &shadow_ray, f32 light_dist,
@@ -151,12 +150,13 @@ constexpr Color hit_color(const HitData &hit, LightHitSpec &light_spec,
   for (u32 i = 0; i < scene.point_light_count; ++i) {
     const PointLight &light = scene.point_lights[i];
     const V3 wi = light.pos - hit.pos;
-    const Ray shadow_ray = {
-        .origin = hit.pos + wi * shadow_epsilon,
-        .direction = wi,
-    };
-
     const f32 light_dist = length(wi);
+    const V3 norm_wi = norm(wi);
+
+    const Ray shadow_ray = {
+        .origin = hit.pos + norm_wi * shadow_epsilon,
+        .direction = norm_wi,
+    };
 
     if (in_shadow(shadow_ray, light_dist, scene))
       continue;
@@ -164,7 +164,7 @@ constexpr Color hit_color(const HitData &hit, LightHitSpec &light_spec,
     const V3 irradiance =
         safe_div_or_0(light.intensity, light_dist * light_dist);
 
-    light_spec.wi = &wi;
+    light_spec.wi = &norm_wi;
     c += (diffuse(light_spec) + specular(light_spec)) * irradiance;
   }
 
@@ -218,15 +218,18 @@ int trace(std::vector<Color> *colors, Input *in) {
         HitData hit_data = {
             .pos = ray.at(t_min),
             .material = hit->material,
-            .normal = hit_normal,
-            .wo = -ray.direction,
+            .normal = norm(hit_normal),
+            .wo = norm(-ray.direction),
         };
         hits.push_back(hit_data);
 
-        ray.origin = hit_data.pos;
+        if (length(hit_data.material->reflactance) <= 0)
+          break;
 
         ray.direction =
-            2 * dot(norm(hit_data.wo), norm(hit_normal)) * norm(hit_normal) - norm(hit_data.wo);
+            2 * dot(hit_data.wo, hit_data.normal) * hit_data.normal -
+            hit_data.wo;
+        ray.origin = hit_data.pos + ray.direction * shadow_epsilon;
       }
 
       if (!hits.empty()) {
@@ -248,15 +251,13 @@ int trace(std::vector<Color> *colors, Input *in) {
 
         color += hit_color(initial_hit, light_spec, scene);
 
-        Color reflected = v3(0, 0, 0);
         for (u32 i = 1; i < hits.size(); ++i) {
           light_spec.mat = hits[i].material;
           light_spec.normal = &hits[i].normal;
           light_spec.wo = &wo;
-          reflected += hit_color(hits[i], light_spec, scene);
+          color += hit_color(hits[i], light_spec, scene) *
+                   hits[i - 1].material->reflactance;
         }
-
-        color += reflected * initial_hit.material->reflactance;
 
         color = clamp_max(color, 255);
 
