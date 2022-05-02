@@ -12,6 +12,9 @@
 
 using namespace rapidxml;
 
+// TODO: take input and output file name
+// TODO: reflactance to reflectance
+
 int main(int argc, char *argv[]) {
   int status;
   char *scene_description;

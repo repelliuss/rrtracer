@@ -8,15 +8,6 @@
 
 using namespace rapidxml;
 
-// TODO: can be implemented incrementally, be careful about meshes as they need
-// material ref
-
-// TODO: make unit parsers and a generic array?
-
-// NOTE: Parsed arrays' capacity are fixed
-
-// TODO: not everyone should print node not found error, like lights
-
 namespace xml {
 
 constexpr const char *fmt_node_not_found =
@@ -29,10 +20,11 @@ constexpr const char *fmt_bad_value =
   "Failed to get value of '%s' node in XML\n";
 
 // TODO: should take node_name size optionally and pass to first_node()
-xml_node<> *first_node(const xml_node<> *parent, const char *node_name) {
+  xml_node<> *first_node(const xml_node<> *parent, const char *node_name,
+			 bool print_err = true) {
   xml_node<> *node = parent->first_node(node_name);
 
-  if (node == nullptr) {
+  if (node == nullptr && print_err) {
     fprintf(stderr, fmt_node_not_found, node_name);
   }
 
@@ -102,10 +94,10 @@ int node_to_camera(Camera &cam, const xml_node<> *parent,
 }
 
 // NOTE: It is not an error if there is no light in the scene.
-  int node_to_ambient_lights(std::vector<AmbientLight> &lights, 
+int node_to_ambient_lights(std::vector<AmbientLight> &lights,
                            const xml_node<> *parent,
                            const char *lights_node_name) {
-  xml_node<> *lights_root = first_node(parent, lights_node_name);
+  xml_node<> *lights_root = first_node(parent, lights_node_name, false);
 
   if (lights_root == nullptr)
     return 0;
@@ -133,12 +125,13 @@ int node_to_camera(Camera &cam, const xml_node<> *parent,
 int node_to_point_lights(std::vector<PointLight> &lights,
                          const xml_node<> *parent,
                          const char *lights_node_name) {
-  xml_node<> *lights_root = first_node(parent, lights_node_name);
+  xml_node<> *lights_root = first_node(parent, lights_node_name, false);
 
   if (lights_root == nullptr)
     return 0;
 
-  for (xml_node<> *point_light_node = first_node(lights_root, "pointlight");
+  for (xml_node<> *point_light_node =
+           first_node(lights_root, "pointlight", false);
        point_light_node != nullptr;
        point_light_node = point_light_node->next_sibling("pointlight")) {
     int status = 0;
@@ -158,7 +151,6 @@ int node_to_point_lights(std::vector<PointLight> &lights,
   return 0;
 }
 
-// NOTE: It is not an error if there is no material in the scene.
 int node_to_materials(std::vector<Material> &materials,
                       const xml_node<> *parent,
                       const char *materials_node_name) {
@@ -265,7 +257,6 @@ int node_to_vertices(std::vector<V3> &arr, const xml_node<> *parent,
   const char *str_end =
     str + str::find_right_whitespace_end(str, node->value_size());
 
-  // REVIEW: should I decompose this for loop?
   for (u32 i = 0; str < str_end; ++i) {
     if(i % 3 == 0) {
       arr.emplace_back();
@@ -280,7 +271,6 @@ int node_to_vertices(std::vector<V3> &arr, const xml_node<> *parent,
   return 0;
 }
 
-// NOTE: It is not an error if there is no material in the scene.
 int node_to_scene_meshes(Scene &scene, const xml_node<> *parent,
                          const char *meshes_node_name) {
   xml_node<> *meshes_roots = first_node(parent, meshes_node_name);

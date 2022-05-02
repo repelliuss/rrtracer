@@ -122,7 +122,6 @@ template <class T> int to_array(T *arr, const char *str, u32 count) {
   T val = 0;
   char *endptr = nullptr;
 
-  // REVIEW: should I decompose this for loop?
   for (u32 i = 0; i < count; ++i) {
     int status = to_integral(val, str, &endptr);
     if (status < 0)
@@ -140,7 +139,6 @@ template <class T> int to_array(T *arr, const char *str, u32 count, int base) {
   T val = 0;
   char *endptr = nullptr;
 
-  // REVIEW: should I decompose this for loop?
   for (u32 i = 0; i < count; ++i) {
     int status = to_integral(val, str, &endptr, base);
     if (status < 0)
@@ -163,7 +161,6 @@ int to_array(T *arr, u32 &count, const char *str, u32 str_length,
 
   count = 0;
 
-  // REVIEW: should I decompose this for loop?
   for (u32 i = 0; i < max_count && str < str_end; ++i) {
     int status = to_integral(val, str, &endptr);
     if (status < 0)
@@ -189,7 +186,6 @@ int to_array(T *arr, u32 &count, const char *str, u32 str_length, u32 max_count,
 
   count = 0;
 
-  // REVIEW: should I decompose this for loop?
   for (u32 i = 0; i < max_count && str < str_end; ++i) {
     int status = to_integral(val, str, &endptr, base);
     if (status < 0)
@@ -207,7 +203,6 @@ int to_array(std::vector<T> &arr, const char *str, u32 str_length) {
   char *endptr = nullptr;
   const char *str_end = str + find_right_whitespace_end(str, str_length);
 
-  // REVIEW: should I decompose this for loop?
   for (u32 i = 0; str < str_end; ++i) {
     arr.emplace_back();
     int status = to_integral(arr.back(), str, &endptr);

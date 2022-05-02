@@ -50,7 +50,6 @@ constexpr V3 operator+=(V3 &a, V3 b) {
   return a;
 }
 
-// TODO: Remove zero check
 constexpr V3 operator-(V3 a) {
   return {
       {
