@@ -8,7 +8,7 @@
 namespace ray {
 
 constexpr f32 shadow_epsilon = 1e-6;
-constexpr f32 intersect_epsilon = 1e-4;
+constexpr f32 intersect_epsilon = 1e-2;
 
 template <class T> constexpr T safe_div_or_0(T num, f32 denom) {
   if (denom != 0.0f) {
@@ -114,7 +114,8 @@ constexpr Color specular(const LightHitSpec &in) {
   return mat->specular * pow(max(0, dot(norm(normal), h)), mat->phong);
 }
 
-constexpr int in_shadow(const Ray &shadow_ray, const Scene &scene) {
+constexpr int in_shadow(const Ray &shadow_ray, f32 light_dist,
+                        const Scene &scene) {
   f32 t_max = std::numeric_limits<f32>::max();
 
   for (u32 i = 0; i < scene.mesh_count; ++i) {
@@ -125,7 +126,10 @@ constexpr int in_shadow(const Ray &shadow_ray, const Scene &scene) {
       f32 t_intersect = intersects_at(shadow_ray, cur_face);
 
       if (t_intersect < t_max) {
-        return 1;
+        f32 obj_dist = length(shadow_ray.at(t_intersect) - shadow_ray.origin);
+
+        if (obj_dist < light_dist)
+          return 1;
       }
     }
   }
@@ -152,10 +156,11 @@ constexpr Color hit_color(const HitData &hit, LightHitSpec &light_spec,
         .direction = wi,
     };
 
-    if (in_shadow(shadow_ray, scene))
+    const f32 light_dist = length(wi);
+
+    if (in_shadow(shadow_ray, light_dist, scene))
       continue;
 
-    const f32 light_dist = length(wi);
     const V3 irradiance =
         safe_div_or_0(light.intensity, light_dist * light_dist);
 
@@ -176,7 +181,7 @@ void *threaded_trace(void *arg) {
 int trace(std::vector<Color> *colors, Input *in) {
   const Scene &scene = *in->scene;
   const Camera &cam = scene.cam;
-  
+
   V2u resolution = cam.resolution;
   // TODO: to input, doesn't depend on anything here
   Plane near_plane = near_plane_of_cam(cam);
