@@ -143,18 +143,25 @@ struct HitData {
   const V3 wo;
 };
 
-constexpr Color hit_color(const HitData &hit, LightHitSpec &light_spec,
-                          const Scene &scene) {
+constexpr Color hit_color(const std::vector<HitData> &hits, const Scene &scene) {
   Color c = v3(0, 0, 0);
 
   for (u32 i = 0; i < scene.point_light_count; ++i) {
     const PointLight &light = scene.point_lights[i];
-    const V3 wi = light.pos - hit.pos;
+    const HitData &first_hit = hits.front();
+    const V3 wi = light.pos - first_hit.pos;
     const f32 light_dist = length(wi);
-    const V3 norm_wi = norm(wi);
+    
+    V3 norm_wi = norm(wi);
+    LightHitSpec spec = {
+        .mat = first_hit.material,
+        .normal = &first_hit.normal,
+        .wo = &first_hit.wo,
+        .wi = &norm_wi,
+    };
 
     const Ray shadow_ray = {
-        .origin = hit.pos + norm_wi * shadow_epsilon,
+        .origin = first_hit.pos + norm_wi * shadow_epsilon,
         .direction = norm_wi,
     };
 
@@ -164,8 +171,27 @@ constexpr Color hit_color(const HitData &hit, LightHitSpec &light_spec,
     const V3 irradiance =
         safe_div_or_0(light.intensity, light_dist * light_dist);
 
-    light_spec.wi = &norm_wi;
-    c += (diffuse(light_spec) + specular(light_spec)) * irradiance;
+    c += (diffuse(spec) + specular(spec)) * irradiance;
+
+    for(u32 i = 1; i < hits.size(); ++i) {
+      norm_wi = norm(light.pos - hits[i].pos);
+      spec.mat = hits[i].material;
+      spec.normal = &hits[i].normal;
+      spec.wo = &hits[i].wo;
+      spec.wi = &norm_wi;
+
+      Ray shadow_ray = {.origin = hits[i].pos + *spec.wi * shadow_epsilon,
+                        .direction = *spec.wi};
+      
+      c += ambient(scene.ambient_lights[0], spec.mat) *
+           hits[i - 1].material->reflactance;
+
+      if (in_shadow(shadow_ray, length(*spec.wi), scene))
+        continue;
+
+      c += (diffuse(spec) + specular(spec)) * irradiance *
+           hits[i - 1].material->reflactance;
+    }
   }
 
   return c;
@@ -241,23 +267,7 @@ int trace(std::vector<Color> *colors, Input *in) {
           color += ambient(scene.ambient_lights[i], initial_hit.material);
         }
 
-        V3 wo = initial_hit.wo;
-        LightHitSpec light_spec = {
-            .mat = initial_hit.material,
-            .normal = &initial_hit.normal,
-            .wo = &wo,
-            .wi = nullptr,
-        };
-
-        color += hit_color(initial_hit, light_spec, scene);
-
-        for (u32 i = 1; i < hits.size(); ++i) {
-          light_spec.mat = hits[i].material;
-          light_spec.normal = &hits[i].normal;
-          light_spec.wo = &wo;
-          color += hit_color(hits[i], light_spec, scene) *
-                   hits[i - 1].material->reflactance;
-        }
+        color += hit_color(hits, scene);
 
         color = clamp_max(color, 255);
 
