@@ -3,6 +3,7 @@
 
 #include "rapidxml/rapidxml.hpp"
 
+#include <cstring>
 #include <stdio.h>
 
 using namespace rapidxml;
@@ -176,9 +177,17 @@ int node_to_materials(Material *materials, u32 &count, const xml_node<> *parent,
        material_node = material_node->next_sibling("material")) {
     int status = 0;
     Material &material = materials[count];
-    const char *id = material_node->first_attribute("id")->value();
+    const xml_attribute<> *attr = material_node->first_attribute("id");
+    const char *id = attr->value();
+    const u32 id_size = attr->value_size();
 
-    status |= str::to_integral(material.id, id);
+    // TODO: remove 255
+    if(id == nullptr || id_size > 254) goto on_err;
+
+    strncpy(material.id, id, id_size);
+    material.id[255] = 0;
+
+    
     status |= node_to_vector(material.ambient, material_node, "ambient");
     status |= node_to_vector(material.diffuse, material_node, "diffuse");
     status |= node_to_vector(material.specular, material_node, "specular");
@@ -187,6 +196,7 @@ int node_to_materials(Material *materials, u32 &count, const xml_node<> *parent,
                              "mirrorreflectance");
 
     if (status < 0) {
+    on_err:
       fprintf(stderr, fmt_bad_format, "material");
       return status;
     }
@@ -241,11 +251,10 @@ int node_to_scene_meshes(Scene &scene, const xml_node<> *parent,
        mesh_node != nullptr; mesh_node = mesh_node->next_sibling("mesh")) {
     int status = 0;
     Mesh &mesh = scene.meshes[scene.mesh_count];
-    i32 material_id = -1;
 
-    status |= node_to_integral(material_id, mesh_node, "materialid");
-    status |= material_by_id(mesh.material, scene.materials,
-                             scene.material_count, material_id);
+    status |=
+        material_by_id(mesh.material, scene.materials, scene.material_count,
+                       first_node_value(mesh_node, "materialid"));
     status |= node_to_array(mesh.triangles, mesh.triangle_count, mesh_node,
                             "faces", Scene::vertex_capacity * 3);
 

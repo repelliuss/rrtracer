@@ -32,7 +32,7 @@ struct PointLight {
 };
 
 struct Material {
-  i32 id;
+  char id[256];
   V3 ambient;
   V3 diffuse;
   V3 specular;
@@ -41,7 +41,7 @@ struct Material {
 };
 
 int material_by_id(Material *&material, Material *materials, u32 material_count,
-                   i32 id);
+                   const char *id);
 
 struct TriangleFace {
   union {
@@ -80,25 +80,23 @@ struct Scene {
   u32 max_ray_trace_depth;
   V3 bg_color;
   Camera cam;
-  
+
   AmbientLight ambient_lights[16];
   u32 ambient_light_count = 0;
-  
+
   PointLight point_lights[16];
   u32 point_light_count = 0;
-  
+
   Material materials[16];
   u32 material_count = 0;
 
   // TODO: remove this
   static constexpr u32 vertex_capacity = 1024;
   static constexpr u32 integral_capacity = 16;
-  
+
   V3 vertices[vertex_capacity];
   u32 vertex_count = 0;
-  
+
   Mesh meshes[16]; // NOTE: objects field in xml
   u32 mesh_count = 0;
 };
-
-
