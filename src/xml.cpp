@@ -14,6 +14,8 @@ using namespace rapidxml;
 
 // NOTE: Parsed arrays' capacity are fixed
 
+// TODO: not everyone should print node not found error, like lights
+
 namespace xml {
 
 constexpr const char *fmt_node_not_found =
@@ -85,6 +87,10 @@ int node_to_camera(Camera &cam, const xml_node<> *parent,
   status |= node_to_vector(cam.near_plane, cam_root, "nearplane");
   status |= node_to_integral(cam.near_dist, cam_root, "neardistance");
   status |= node_to_vector(cam.resolution, cam_root, "imageresolution");
+
+  cam.orientation.v = cam.up;
+  cam.orientation.w = -cam.gaze;
+  cam.orientation.u = cross(cam.orientation.v, cam.orientation.w);
 
   if (status < 0) {
     fprintf(stderr, fmt_bad_format, "camera");
@@ -178,7 +184,7 @@ int node_to_materials(Material *materials, u32 &count, const xml_node<> *parent,
     status |= node_to_vector(material.specular, material_node, "specular");
     status |= node_to_integral(material.phong, material_node, "phongexponent");
     status |= node_to_vector(material.reflactance, material_node,
-                             "mirrorreflactance");
+                             "mirrorreflectance");
 
     if (status < 0) {
       fprintf(stderr, fmt_bad_format, "material");
@@ -193,7 +199,7 @@ int node_to_materials(Material *materials, u32 &count, const xml_node<> *parent,
 
 template <class T>
 int node_to_array(T *arr, u32 &count, const xml_node<> *parent,
-                  const char *arr_node_name) {
+                  const char *arr_node_name, u32 max_capacity) {
   xml_node<> *node = first_node(parent, arr_node_name);
 
   if (node == nullptr)
@@ -204,8 +210,7 @@ int node_to_array(T *arr, u32 &count, const xml_node<> *parent,
   if (val == nullptr)
     return 0;
 
-  return str::to_array(arr, count, val, node->value_size(),
-                       Scene::integral_capacity);
+  return str::to_array(arr, count, val, node->value_size(), max_capacity);
 }
 
 template <class T>
@@ -215,7 +220,7 @@ int node_to_vertices(T *vertices, u32 &vertex_count, const xml_node<> *parent,
   int status;
 
   status = node_to_array(reinterpret_cast<f32 *>(vertices), integral_count,
-                         parent, vertices_node_name);
+                         parent, vertices_node_name, Scene::vertex_capacity * 3);
 
   vertex_count = integral_count / 3;
 
@@ -238,22 +243,23 @@ int node_to_scene_meshes(Scene &scene, const xml_node<> *parent,
     Mesh &mesh = scene.meshes[scene.mesh_count];
     i32 material_id = -1;
 
-    mesh.vertices = scene.vertices;
-
     status |= node_to_integral(material_id, mesh_node, "materialid");
     status |= material_by_id(mesh.material, scene.materials,
                              scene.material_count, material_id);
-    status |=
-        node_to_array(mesh.triangles, mesh.triangle_count, mesh_node, "faces");
+    status |= node_to_array(mesh.triangles, mesh.triangle_count, mesh_node,
+                            "faces", Scene::vertex_capacity * 3);
 
     if (status < 0) {
       fprintf(stderr, fmt_bad_format, "mesh");
       return status;
     }
 
-    // remap 1 indexed faces to 0 index
-    for (u32 i = 0; i < mesh.triangle_count; ++i) {
-      --mesh.triangles[i];
+    // NOTE: also remapping 1 indexed faces to 0 index
+    mesh.face_count = mesh.triangle_count / 3;
+    for (u32 i = 0; i < mesh.face_count; ++i) {
+      mesh.faces[i].vertices[0] = scene.vertices[mesh.triangles[i * 3] - 1];
+      mesh.faces[i].vertices[1] = scene.vertices[mesh.triangles[i * 3 + 1] - 1];
+      mesh.faces[i].vertices[2] = scene.vertices[mesh.triangles[i * 3 + 2] - 1];
     }
 
     ++scene.mesh_count;
