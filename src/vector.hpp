@@ -31,8 +31,6 @@ using Color = V3;
 /// V3
 ///
 
-// TODO: rewrite these
-
 constexpr V3 v3(f32 a, f32 b, f32 c) { return {{a, b, c}}; }
 
 constexpr V3 operator+(V3 a, V3 b) {

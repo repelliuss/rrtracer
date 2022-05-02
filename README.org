@@ -1,3 +1,5 @@
 1. Run ~make~ to build, an executable named ~rrtracer~ will be compiled.
-2. Run ~rrtracer~ to get a ppm file named ~frame.ppm~
-3. If you want ~compile_commands.json~, install ~bear~ and run ~bear -- make~.
+2. If you want ~compile_commands.json~, install ~bear~ and run ~bear -- make~.
+
+* TODO add readme
+

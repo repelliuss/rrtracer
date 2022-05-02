@@ -12,20 +12,21 @@
 
 using namespace rapidxml;
 
-// TODO: take input and output file name
-// TODO: reflectance to reflectance
-
 int main(int argc, char *argv[]) {
   int status;
   char *scene_description;
   umax size_scene_description;
 
-  // if(argc < 2) {
-  //   fprintf(stderr, "no scene path\n");
-  //   return -1;
-  // }
+  if(argc < 2) {
+    fprintf(stderr, "No XML scene path is given as 1st argument!\n");
+    return -1;
+  }
+  else if(argc < 3) {
+    fprintf(stderr, "No output image path is given as 2nd argument!\n");
+    return -1;
+  }
 
-  status = file::size(size_scene_description, "res/monkey_wallf.xml");
+  status = file::size(size_scene_description, argv[1]);
   if (status < 0)
     return status;
 
@@ -33,8 +34,7 @@ int main(int argc, char *argv[]) {
   scene_description = static_cast<char *>(malloc(size_scene_description + 1));
   scene_description[size_scene_description] = 0;
 
-  status = file::read(scene_description, "res/monkey_wallf.xml",
-                      size_scene_description);
+  status = file::read(scene_description, argv[1], size_scene_description);
   if (status < 0)
     goto on_err;
 
@@ -42,6 +42,17 @@ int main(int argc, char *argv[]) {
     Scene scene;
     status = xml::to_scene(scene, scene_description);
 
+    if(scene.cam.resolution.x == 0) {
+      fprintf(stderr, "Camera X resolution is 0\n");
+      goto on_err;
+    }
+
+    if (scene.cam.resolution.y == 0) {
+      fprintf(stderr, "Camera Y resolution is 0!\n");
+      goto on_err;
+    }
+
+    // TODO: handle according to HW
     int thread_count = 16;
 
     pthread_t pids[thread_count];
@@ -72,20 +83,16 @@ int main(int argc, char *argv[]) {
       all_colors.insert(all_colors.end(), colors[i].begin(), colors[i].end());
     }
 
-    printf("done!\n");
-    
     size_t count = all_colors.size();
 
     img::Input img_in {
       .data = all_colors.data(),
       .count = static_cast<u32>(count),
       .resolution = scene.cam.resolution,
-      .output_path = "out",
+      .output_path = argv[2],
     };
 
     img::write_to_ppm(img_in);
-
-    // BUG: crash on empty vector
   }
 
 on_err:
