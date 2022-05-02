@@ -55,6 +55,8 @@ constexpr f32 intersects_at(const Ray &ray, const TriangleFace &tri) {
   V3 ba = tri.a - tri.b;
   V3 ca = tri.a - tri.c;
 
+  // TODO: maybe check if parallel to plane?
+
   f32 A = determinant(ba, ca, ray.direction);
   if(A == 0.0f)
     return std::numeric_limits<f32>::max();
