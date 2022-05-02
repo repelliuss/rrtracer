@@ -142,6 +142,8 @@ int trace(std::vector<Color> *colors, Input *in) {
   const Camera &cam = scene.cam;
   const V2u &resolution = cam.resolution;
   const Plane near_plane = near_plane_of_cam(cam);
+
+  Color bg_color = clamp_max(scene.bg_color, 255);
   
   V2u pixel = v2u(0, in->y_range.beg);
 
@@ -191,7 +193,7 @@ int trace(std::vector<Color> *colors, Input *in) {
       if (hits_size > 0) {
         colors->push_back(clamp_max(hit_color(hits, hits_size, scene), 255));
       } else {
-        colors->push_back(scene.bg_color);
+        colors->push_back(bg_color);
       }
     }
   }
